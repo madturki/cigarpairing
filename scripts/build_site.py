@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the static CigarPairing.com site from the old Nice Pair WordPress dump.
+"""Build the static AshAndGrain.com site from the old Nice Pair WordPress dump.
 
 Usage:
     python3 scripts/build_site.py /path/to/nicepair.sql [--no-fetch]
@@ -28,10 +28,10 @@ UPLOADS = OUT / "wp-content" / "uploads"
 EXTERNAL = OUT / "wp-content" / "external"
 CDX_CACHE = ROOT / "scripts" / ".cache"
 
-SITE_NAME = "Cigar Pairing"
+SITE_NAME = "Ash & Grain"
 SITE_TAGLINE = "How to Pair Cigars & Drinks"
-SITE_URL = "https://cigarpairing.com"
-DOMAIN = "cigarpairing.com"
+SITE_URL = "https://ashandgrain.com"
+DOMAIN = "ashandgrain.com"
 POSTS_PER_PAGE = 12
 
 EXCLUDED_CATEGORIES = {"personal"}
@@ -479,7 +479,7 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
 <title>{esc(full_title)}</title>
 <meta name="description" content="{esc(description)}">
 <link rel="canonical" href="{SITE_URL}{esc(path)}">
-<meta property="og:site_name" content="{SITE_NAME}">
+<meta property="og:site_name" content="{esc(SITE_NAME)}">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:type" content="{og_type}">
@@ -491,7 +491,7 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="/"><span class="brand-name">{SITE_NAME}</span><span class="brand-tag">{esc(SITE_TAGLINE)}</span></a>
+    <a class="brand" href="/"><span class="brand-name">{esc(SITE_NAME)}</span><span class="brand-tag">{esc(SITE_TAGLINE)}</span></a>
     <nav class="main-nav">{nav}<a class="search-link" href="/search/" aria-label="Search">Search</a></nav>
   </div>
 </header>
@@ -500,7 +500,7 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
 </main>
 <footer class="site-footer">
   <div class="wrap">
-    <p>&copy; 2012–{datetime.now().year} {SITE_NAME}. Archived cigar &amp; drink pairing reviews. Please enjoy responsibly.</p>
+    <p>&copy; 2012–{datetime.now().year} {esc(SITE_NAME)}. Archived cigar &amp; drink pairing reviews. Please enjoy responsibly.</p>
   </div>
 </footer>
 </body>
