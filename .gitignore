@@ -1,0 +1,6 @@
+# The WordPress dump contains user accounts and shop orders; never commit it.
+*.sql
+*.sql.gz
+.DS_Store
+__pycache__/
+scripts/.cache/
