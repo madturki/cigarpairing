@@ -352,12 +352,16 @@ class Site:
         self.slugs = {p["post_name"] for p in self.posts + self.pages}
 
         by_term = {c["term_id"]: c for c in self.categories.values()}
+        pairing_ids = {c["term_id"] for c in self.categories.values()
+                       if c["slug"] == "pairings" or by_term.get(c["parent"], {}).get("slug") == "pairings"}
         for p in self.posts:
+            is_video = any(c["slug"] == "videos" for c in p["cats"])
             seen = set()
             for c in p["cats"]:
                 while c and c["term_id"] not in seen:
                     seen.add(c["term_id"])
-                    c["posts"].append(p)
+                    if not (is_video and c["term_id"] in pairing_ids):
+                        c["posts"].append(p)
                     c = by_term.get(c["parent"])
         self.cat_list = sorted((c for c in self.categories.values()
                                 if c["posts"] and c["slug"] not in EXCLUDED_CATEGORIES),
@@ -533,6 +537,8 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
   gtag('config', '{GA_ID}');
 </script>
 <script src="/assets/consent.js" data-ga-id="{GA_ID}" defer></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5954496023571705"
+     crossorigin="anonymous"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(full_title)}</title>
@@ -756,6 +762,7 @@ def main():
     clean_output()
     (OUT / "CNAME").write_text(DOMAIN + "\n")
     (OUT / ".nojekyll").write_text("")
+    (OUT / "ads.txt").write_text("google.com, pub-5954496023571705, DIRECT, f08c47fec0942fa0\n")
 
     intro = f"""<section class="hero">
   <h1>{esc(SITE_TAGLINE)}</h1>

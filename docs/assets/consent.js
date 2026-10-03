@@ -13,7 +13,7 @@
   }
 
   function loadAnalytics() {
-    gtag("consent", "update", { analytics_storage: "granted" });
+    gtag("consent", "update", { ad_storage: "granted", ad_user_data: "granted", ad_personalization: "granted", analytics_storage: "granted" });
     if (loaded) return;
     loaded = true;
     var s = document.createElement("script");
@@ -23,7 +23,7 @@
   }
 
   function clearAnalyticsCookies() {
-    gtag("consent", "update", { analytics_storage: "denied" });
+    gtag("consent", "update", { ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "denied" });
     document.cookie.split(";").forEach(function (c) {
       var name = c.split("=")[0].trim();
       if (name.indexOf("_ga") !== 0) return;
@@ -47,7 +47,7 @@
       banner.setAttribute("aria-live", "polite");
       banner.setAttribute("aria-label", "Cookie consent");
       banner.innerHTML =
-        '<p>We use Google Analytics cookies to understand how visitors use this site. ' +
+        '<p>We use Google Analytics cookies to understand how visitors use this site, and Google AdSense cookies to show personalised ads. ' +
         "They're only set if you accept, and you can change your mind any time from the footer.</p>" +
         '<div class="cookie-actions">' +
         '<button type="button" class="button ghost" data-consent="denied">Decline</button>' +
