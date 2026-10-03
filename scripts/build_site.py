@@ -34,6 +34,7 @@ SITE_NAME = "Ash & Grain"
 SITE_TAGLINE = "How to Pair Cigars & Drinks"
 SITE_URL = "https://ashandgrain.com"
 DOMAIN = "ashandgrain.com"
+GA_ID = "G-7Q8NNK3BLB"
 POSTS_PER_PAGE = 12
 
 EXCLUDED_CATEGORIES = {"personal"}
@@ -524,6 +525,14 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
     return f"""<!doctype html>
 <html lang="en">
 <head>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('consent', 'default', {{ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied'}});
+  gtag('js', new Date());
+  gtag('config', '{GA_ID}');
+</script>
+<script src="/assets/consent.js" data-ga-id="{GA_ID}" defer></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(full_title)}</title>
@@ -551,6 +560,7 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
 <footer class="site-footer">
   <div class="wrap">
     <p>&copy; 2012–{datetime.now().year} {esc(SITE_NAME)}. Archived cigar &amp; drink pairing reviews. Please enjoy responsibly.</p>
+    <p><button type="button" class="cookie-settings" data-cookie-settings>Cookie settings</button></p>
   </div>
 </footer>
 </body>
