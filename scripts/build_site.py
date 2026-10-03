@@ -27,6 +27,7 @@ OUT = ROOT / "docs"
 UPLOADS = OUT / "wp-content" / "uploads"
 EXTERNAL = OUT / "wp-content" / "external"
 CDX_CACHE = ROOT / "scripts" / ".cache"
+CONTENT = ROOT / "content" / "posts"
 
 SITE_NAME = "Ash & Grain"
 SITE_TAGLINE = "How to Pair Cigars & Drinks"
@@ -36,7 +37,9 @@ POSTS_PER_PAGE = 12
 
 EXCLUDED_CATEGORIES = {"personal"}
 INCLUDED_PAGES = {"about-us", "stores"}
-NAV = [("Pairings", "/category/pairings/"), ("Articles", "/category/article/"),
+LOCAL_CATEGORIES = {"spirit-guides": ("Spirit Guides", "Where popular spirits come from, how they're made, "
+                                                       "and what to look for in a cigar to pair with each.")}
+NAV = [("Pairings", "/category/pairings/"), ("Guides", "/category/spirit-guides/"), ("Articles", "/category/article/"),
        ("Events", "/category/events/"), ("Videos", "/category/videos/"),
        ("Stores", "/stores/"), ("About", "/about-us/")]
 
@@ -105,6 +108,36 @@ def load_dump(path):
         if t in cols:
             tables[t].extend(dict(zip(cols[t], r)) for r in parse_values(data, m.end()))
     return tables
+
+
+def load_local_posts(categories):
+    """Read articles from content/posts/*.html, each starting with a <!-- key: value --> header."""
+    by_slug = {c["slug"]: c for c in categories.values()}
+    posts = []
+    for n, path in enumerate(sorted(CONTENT.glob("*.html")), start=1):
+        text = path.read_text(encoding="utf-8")
+        m = re.match(r"\s*<!--(.*?)-->\s*", text, re.S)
+        if not m:
+            sys.exit(f"{path}: missing <!-- header -->")
+        meta = dict(re.findall(r"^\s*(\w+):\s*(.*?)\s*$", m.group(1), re.M))
+        cats = []
+        for slug in (s.strip() for s in meta.get("categories", "").split(",") if s.strip()):
+            if slug not in by_slug:
+                if slug not in LOCAL_CATEGORIES:
+                    sys.exit(f"{path}: unknown category '{slug}'")
+                name, desc = LOCAL_CATEGORIES[slug]
+                new_id = -len(by_slug) - 1
+                categories[new_id] = by_slug[slug] = {
+                    "term_id": new_id, "name": name, "slug": slug,
+                    "parent": 0, "description": desc, "posts": []}
+            cats.append(by_slug[slug])
+        posts.append({
+            "ID": -n, "post_name": meta.get("slug") or path.stem, "post_title": meta["title"],
+            "post_content": text[m.end():], "post_excerpt": meta.get("excerpt", ""),
+            "post_date": meta["date"], "post_modified": meta.get("modified", meta["date"]),
+            "cats": sorted(cats, key=lambda c: c["name"]),
+            "description": meta.get("description", "")})
+    return posts
 
 
 # ---------------------------------------------------------------------- content
@@ -297,6 +330,7 @@ class Site:
                 continue
             p["cats"] = sorted(cats, key=lambda c: c["name"])
             self.posts.append(p)
+        self.posts += load_local_posts(self.categories)
         self.posts.sort(key=lambda p: p["post_date"], reverse=True)
         self.pages = [p for p in dump["wp_posts"] if p["post_type"] == "page"
                       and p["post_status"] == "publish" and p["post_name"] in INCLUDED_PAGES]
@@ -450,7 +484,7 @@ class Site:
             p["title"] = html.unescape(p["post_title"]).strip()
             p["html"] = self.convert(p["post_content"])
             p["date"] = datetime.strptime(p["post_date"], "%Y-%m-%d %H:%M:%S")
-            desc = self.meta.get(p["ID"], {}).get("_yoast_wpseo_metadesc")
+            desc = p.get("description") or self.meta.get(p["ID"], {}).get("_yoast_wpseo_metadesc")
             p["description"] = html.unescape(desc).strip() if desc else self.excerpt(p, 30)
         for p in self.posts:
             p["image"] = self.featured(p)
