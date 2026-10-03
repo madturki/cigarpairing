@@ -153,6 +153,18 @@ def load_local_posts(categories):
     return posts
 
 
+def move_dates_to_2026(items):
+    """Spread the WordPress dates evenly over Jan 1 - Oct 2, 2026, keeping their original order."""
+    fmt = "%Y-%m-%d %H:%M:%S"
+    start, end = datetime(2026, 1, 1), datetime(2026, 10, 2, 23, 59)
+    old = [datetime.strptime(p["post_date"], fmt) for p in items]
+    lo, hi = min(old), max(old)
+    scale = lambda d: (start + (d - lo) / (hi - lo) * (end - start)).strftime(fmt)
+    for p, d in zip(items, old):
+        modified = min(max(datetime.strptime(p["post_modified"], fmt), d), hi)
+        p["post_date"], p["post_modified"] = scale(d), scale(modified)
+
+
 # ---------------------------------------------------------------------- content
 
 BLOCK = (r"(?:table|thead|tfoot|caption|col|colgroup|tbody|tr|td|th|div|dl|dd|dt|ul|ol|li|pre|form|map|"
@@ -347,6 +359,7 @@ class Site:
         self.posts.sort(key=lambda p: p["post_date"], reverse=True)
         self.pages = [p for p in dump["wp_posts"] if p["post_type"] == "page"
                       and p["post_status"] == "publish" and p["post_name"] in INCLUDED_PAGES]
+        move_dates_to_2026([p for p in self.posts if p["ID"] > 0] + self.pages)
 
         self.url_by_id = {p["ID"]: f"/{p['post_name']}/" for p in self.posts + self.pages}
         self.slugs = {p["post_name"] for p in self.posts + self.pages}
@@ -728,7 +741,8 @@ def render_404():
 
 
 def render_sitemap(site):
-    urls = ["/"] + [f"/category/{c['slug']}/" for c in site.cat_list] + \
+    urls = ["/"] + [f"/category/{c['slug']}/" + (f"page/{n}/" if n > 1 else "") for c in site.cat_list
+                    for n in range(1, max(1, math.ceil(len(c["posts"]) / POSTS_PER_PAGE)) + 1)] + \
            [f"/{p['post_name']}/" for p in site.posts + site.pages]
     lastmod = {f"/{p['post_name']}/": p["post_modified"][:10] for p in site.posts + site.pages}
     items = "".join(f"<url><loc>{SITE_URL}{u}</loc>" + (f"<lastmod>{lastmod[u]}</lastmod>" if u in lastmod else "") + "</url>\n"
