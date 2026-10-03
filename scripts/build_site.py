@@ -28,6 +28,7 @@ UPLOADS = OUT / "wp-content" / "uploads"
 EXTERNAL = OUT / "wp-content" / "external"
 CDX_CACHE = ROOT / "scripts" / ".cache"
 CONTENT = ROOT / "content" / "posts"
+GENERATED = OUT / "assets" / "generated"
 
 SITE_NAME = "Ash & Grain"
 SITE_TAGLINE = "How to Pair Cigars & Drinks"
@@ -364,6 +365,8 @@ class Site:
         if not url:
             m = re.search(r'<img[^>]+src="(/wp-content/[^"]+)"', post["html"])
             url = m.group(1) if m else None
+        if not url and (GENERATED / f"{post['post_name']}.jpg").exists():
+            url = f"/assets/generated/{post['post_name']}.jpg"
         return url
 
     def gallery(self, m):
@@ -549,7 +552,6 @@ def card(p):
     return f"""<article class="card">
   <a class="card-img" href="/{p['post_name']}/">{img}</a>
   <div class="card-body">
-    <div class="card-meta"><time datetime="{p['date']:%Y-%m-%d}">{fmt_date(p['date'])}</time></div>
     <h2><a href="/{p['post_name']}/">{esc(p['title'])}</a></h2>
     <p>{esc(p['summary'])}</p>
     <div class="tags">{cats}</div>
@@ -616,7 +618,6 @@ def render_post(site, p, idx):
   <header class="post-header">
     <div class="tags">{cats}</div>
     <h1>{esc(p['title'])}</h1>
-    <time datetime="{p['date']:%Y-%m-%d}">{fmt_date(p['date'])}</time>
   </header>
   {hero}
   <div class="content">
@@ -640,7 +641,7 @@ def render_page(p):
 
 
 def render_search(site):
-    index = [{"t": p["title"], "u": f"/{p['post_name']}/", "d": fmt_date(p["date"]),
+    index = [{"t": p["title"], "u": f"/{p['post_name']}/",
               "c": [c["name"] for c in p["cats"]], "s": p["summary"],
               "x": re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", p["html"])))[:4000]}
              for p in site.posts]

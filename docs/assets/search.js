@@ -36,7 +36,7 @@
     results.innerHTML = hits
       .map(function (h) {
         return '<article class="result"><h2><a href="' + h.p.u + '">' + escapeHtml(h.p.t) + "</a></h2>" +
-          '<div class="card-meta">' + escapeHtml(h.p.d) + " \u00b7 " + escapeHtml(h.p.c.join(", ")) + "</div>" +
+          '<div class="card-meta">' + escapeHtml(h.p.c.join(", ")) + "</div>" +
           "<p>" + escapeHtml(h.p.s) + "</p></article>";
       })
       .join("");
