@@ -67,7 +67,8 @@ main.wrap { padding-top: 32px; padding-bottom: 48px; min-height: 60vh; }
 .slider-dots { display: flex; gap: 6px; }
 .slider-dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0; background: var(--line); cursor: pointer; }
 .slider-dots button[aria-current="true"] { background: var(--accent); }
-.thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.thumbs, .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.more { text-align: center; margin: 32px 0 0; }
 
 /* Listing */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 32px; align-items: start; }
@@ -152,7 +153,7 @@ figure.alignnone { margin: 0 0 16px; }
   .layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .thumbs { grid-template-columns: 1fr; }
+  .thumbs, .grid-3 { grid-template-columns: 1fr; }
   .slide-body { padding: 16px 18px 64px; }
   .slider-controls { left: 18px; right: auto; bottom: 16px; }
 }

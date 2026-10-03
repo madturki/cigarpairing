@@ -43,6 +43,8 @@ LOCAL_CATEGORIES = {"spirit-guides": ("Spirit Guides", "Where popular spirits co
 NAV = [("Pairings", "/category/pairings/"), ("Guides", "/category/spirit-guides/"), ("Articles", "/category/article/"),
        ("Events", "/category/events/"), ("Videos", "/category/videos/"),
        ("Stores", "/stores/"), ("About", "/about-us/")]
+CATEGORY_HEADINGS = {"events": "Past Events"}
+NO_SIDEBAR = {"events"}
 # Home page features: (slider slugs, thumbnail slugs). Pairing slides use the original 960x285 slider banners.
 FEATURED_PAIRINGS = (["warres-vintage-port-1983-cohiba-robusto",
                       "dows-1985-vintage-port-montecristo-edmundo",
@@ -146,7 +148,7 @@ def load_local_posts(categories):
             "post_content": text[m.end():], "post_excerpt": meta.get("excerpt", ""),
             "post_date": meta["date"], "post_modified": meta.get("modified", meta["date"]),
             "cats": sorted(cats, key=lambda c: c["name"]),
-            "description": meta.get("description", "")})
+            "description": meta.get("description", ""), "header_image": meta.get("image")})
     return posts
 
 
@@ -369,6 +371,8 @@ class Site:
         return self.images.resolve(path) if path else None
 
     def featured(self, post):
+        if post.get("header_image"):
+            return post["header_image"]
         thumb = self.meta.get(post["ID"], {}).get("_thumbnail_id")
         url = self.attachment_url(thumb) if thumb and str(thumb).isdigit() else None
         if not url:
@@ -626,15 +630,17 @@ def write(path, text):
     dest.write_text(text, encoding="utf-8")
 
 
-def render_listing(site, posts, base, title, heading, description, top=""):
+def render_listing(site, posts, base, title, heading, description, with_sidebar=True):
     pages = max(1, math.ceil(len(posts) / POSTS_PER_PAGE))
     for n in range(1, pages + 1):
         chunk = posts[(n - 1) * POSTS_PER_PAGE: n * POSTS_PER_PAGE]
-        body = f"""{top if n == 1 else ""}{heading}
-<div class="layout">
-  <div class="grid">{''.join(card(p) for p in chunk)}</div>
+        grid = f'<div class="grid">{"".join(card(p) for p in chunk)}</div>'
+        listing = f"""<div class="layout">
+  {grid}
   {sidebar(site)}
-</div>
+</div>""" if with_sidebar else grid
+        body = f"""{heading}
+{listing}
 {pagination(base, n, pages)}"""
         path = base if n == 1 else f"{base}page/{n}/"
         write(path, layout(title if n == 1 else f"{title} — Page {n}", body, description, path))
@@ -750,12 +756,17 @@ def main():
         featured_section(site, "Spirit Guides", "Spirit guide", "wide",
                          "/category/spirit-guides/", "All guides", FEATURED_GUIDES) + \
         '<script src="/assets/slider.js" defer></script>'
-    render_listing(site, site.posts, "/", SITE_NAME, intro, SITE_TAGLINE, top)
+    guides = next(c for c in site.cat_list if c["slug"] == "spirit-guides")["posts"]
+    home = f"""{top}{intro}
+<div class="grid-3">{''.join(card(p) for p in guides[:6])}</div>
+<p class="more"><a class="button" href="/category/spirit-guides/">Show All Spirit Guides</a></p>"""
+    write("/", layout(SITE_NAME, home, SITE_TAGLINE, "/"))
     for c in site.cat_list:
         desc = c["description"] or f"{c['name']} pairing reviews and articles."
-        heading = f'<header class="archive-header"><p class="eyebrow">Category</p><h1>{esc(c["name"])}</h1>' + \
+        heading = f'<header class="archive-header"><p class="eyebrow">Category</p><h1>{esc(CATEGORY_HEADINGS.get(c["slug"], c["name"]))}</h1>' + \
                   (f"<p>{esc(c['description'])}</p>" if c["description"] else "") + "</header>"
-        render_listing(site, c["posts"], f"/category/{c['slug']}/", c["name"], heading, desc)
+        render_listing(site, c["posts"], f"/category/{c['slug']}/", c["name"], heading, desc,
+                       c["slug"] not in NO_SIDEBAR)
     for i, p in enumerate(site.posts):
         render_post(site, p, i)
     for p in site.pages:
