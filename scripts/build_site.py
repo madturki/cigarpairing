@@ -43,6 +43,15 @@ LOCAL_CATEGORIES = {"spirit-guides": ("Spirit Guides", "Where popular spirits co
 NAV = [("Pairings", "/category/pairings/"), ("Guides", "/category/spirit-guides/"), ("Articles", "/category/article/"),
        ("Events", "/category/events/"), ("Videos", "/category/videos/"),
        ("Stores", "/stores/"), ("About", "/about-us/")]
+# Home page features: (slider slugs, thumbnail slugs). Pairing slides use the original 960x285 slider banners.
+FEATURED_PAIRINGS = (["warres-vintage-port-1983-cohiba-robusto",
+                      "dows-1985-vintage-port-montecristo-edmundo",
+                      "pairing-dom-perignon-2003-perdomo-10th-anniversary-champaign"],
+                     ["1973-chateau-de-laubade-armagnac-espinosa-601-blue-label-maduro",
+                      "pairing-laphroaig-and-cigars-18-year-and-san-cristobal",
+                      "taylor-fladgate-30-year-paul-stulac-red-screaming-sun"])
+FEATURED_GUIDES = (["cigar-and-spirits-pairing-guide", "scotch-cigar-pairing-guide", "cognac-cigar-pairing-guide"],
+                   ["rum-cigar-pairing-guide", "port-cigar-pairing-guide", "bourbon-cigar-pairing-guide"])
 
 TABLES = {"wp_posts", "wp_terms", "wp_term_taxonomy", "wp_term_relationships", "wp_postmeta"}
 OLD_HOST = r"https?://(?:www\.)?nicepair\.ca"
@@ -559,6 +568,36 @@ def card(p):
 </article>"""
 
 
+def slider(posts, label, variant):
+    slides = "".join(f"""<li class="slide" aria-label="{i + 1} of {len(posts)}">
+  <a class="slide-img" href="/{p['post_name']}/"><img src="{esc(p['image'])}" alt="{esc(p['title'])}"{' loading="lazy"' if i else ''}></a>
+  <div class="slide-body">
+    <p class="eyebrow">{esc(label)}</p>
+    <h3><a href="/{p['post_name']}/">{esc(p['title'])}</a></h3>
+    <p>{esc(p['summary'])}</p>
+  </div>
+</li>""" for i, p in enumerate(posts))
+    dots = "".join(f'<button type="button" aria-label="Show slide {i + 1}"></button>' for i in range(len(posts)))
+    return f"""<div class="slider slider-{variant}" aria-roledescription="carousel" aria-label="{esc(label)}">
+  <ul class="slides">{slides}</ul>
+  <div class="slider-controls">
+    <button type="button" class="slider-prev" aria-label="Previous slide">&#8249;</button>
+    <div class="slider-dots">{dots}</div>
+    <button type="button" class="slider-next" aria-label="Next slide">&#8250;</button>
+  </div>
+</div>"""
+
+
+def featured_section(site, title, label, variant, link, link_text, slugs):
+    by_slug = {p["post_name"]: p for p in site.posts}
+    slides, thumbs = ([by_slug[s] for s in group] for group in slugs)
+    return f"""<section class="featured">
+  <header class="section-head"><h2>{esc(title)}</h2><a href="{link}">{esc(link_text)} &rarr;</a></header>
+  {slider(slides, label, variant)}
+  <div class="thumbs">{''.join(card(p) for p in thumbs)}</div>
+</section>"""
+
+
 def sidebar(site):
     drinks = "".join(f'<li><a href="/category/{c["slug"]}/">{esc(c["name"])}</a> <span>{len(c["posts"])}</span></li>'
                      for c in site.drink_cats)
@@ -587,11 +626,11 @@ def write(path, text):
     dest.write_text(text, encoding="utf-8")
 
 
-def render_listing(site, posts, base, title, heading, description):
+def render_listing(site, posts, base, title, heading, description, top=""):
     pages = max(1, math.ceil(len(posts) / POSTS_PER_PAGE))
     for n in range(1, pages + 1):
         chunk = posts[(n - 1) * POSTS_PER_PAGE: n * POSTS_PER_PAGE]
-        body = f"""{heading}
+        body = f"""{top if n == 1 else ""}{heading}
 <div class="layout">
   <div class="grid">{''.join(card(p) for p in chunk)}</div>
   {sidebar(site)}
@@ -706,7 +745,12 @@ def main():
   <h1>{esc(SITE_TAGLINE)}</h1>
   <p>Hands-on reviews of cigars paired with scotch, whisky, rum, cognac, port, wine and beer — what we smoked, what we poured, and how they played together.</p>
 </section>"""
-    render_listing(site, site.posts, "/", SITE_NAME, intro, SITE_TAGLINE)
+    top = featured_section(site, "Featured Pairings", "Featured pairing", "banner",
+                           "/category/pairings/", "All pairings", FEATURED_PAIRINGS) + \
+        featured_section(site, "Spirit Guides", "Spirit guide", "wide",
+                         "/category/spirit-guides/", "All guides", FEATURED_GUIDES) + \
+        '<script src="/assets/slider.js" defer></script>'
+    render_listing(site, site.posts, "/", SITE_NAME, intro, SITE_TAGLINE, top)
     for c in site.cat_list:
         desc = c["description"] or f"{c['name']} pairing reviews and articles."
         heading = f'<header class="archive-header"><p class="eyebrow">Category</p><h1>{esc(c["name"])}</h1>' + \
