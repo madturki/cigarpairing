@@ -521,7 +521,7 @@ def fmt_date(d):
 def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type="website"):
     full_title = f"{title} | {SITE_NAME}" if title != SITE_NAME else f"{SITE_NAME} — {SITE_TAGLINE}"
     nav = "".join(f'<a href="{u}">{esc(n)}</a>' for n, u in NAV)
-    og_image = f'<meta property="og:image" content="{SITE_URL}{esc(image)}">' if image else ""
+    og_image = f'<meta property="og:image" content="{SITE_URL}{esc(image or "/assets/og-default.jpg")}">'
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -550,7 +550,7 @@ def layout(title, body, description=SITE_TAGLINE, path="/", image=None, og_type=
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="/"><span class="brand-name">{esc(SITE_NAME)}</span><span class="brand-tag">{esc(SITE_TAGLINE)}</span></a>
+    <a class="brand" href="/"><img class="brand-logo" src="/assets/logo-light.png" alt="{esc(SITE_NAME)}" width="300" height="229"><span class="brand-tag">{esc(SITE_TAGLINE)}</span></a>
     <nav class="main-nav">{nav}<a class="search-link" href="/search/" aria-label="Search">Search</a></nav>
   </div>
 </header>
